@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shard Overlay</title>
+<meta name="description" content="Бесплатный оверлей для стрима Dota 2: убийства всех 10 игроков, таймеры, виджеты, второй экран.">
+<link rel="icon" href="img/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050506; --card: rgba(15,15,18,.72); --card2: #16161b; --line: rgba(255,255,255,.08);
+    --text: #f2f2f4; --muted: #9a9aa6; --gold: #f2b544; --gold2: #ffdb8a; --red: #ff4b4b; --green: #4fd17f;
+    --violet: #a46bff; --blue: #4c9aff;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  html { background: var(--bg); overflow-x: clip; }
+  body { margin: 0; background: none; color: var(--text); font: 400 17px/1.6 Inter, system-ui, sans-serif; overflow-x: hidden; }
+  a { color: inherit; text-decoration: none; }
+  img { display: block; max-width: 100%; }
+  .wrap { width: min(1200px, 100% - 32px); margin: 0 auto; }
+
+  /* backdrop: one picture per section, crossfades to whatever is in the middle of the screen.
+     Pictures go to img/bg/<name>.jpg; until then each layer shows only its colour glow. */
+  .bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+  .bg div { position: absolute; inset: 0; opacity: 0; transform: scale(1.08); transition: opacity 1.2s ease, transform 6s ease-out; background-size: cover; background-position: center; }
+  .bg div.on { opacity: 1; transform: scale(1); }
+  .bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,5,6,.55), rgba(5,5,6,.35) 40%, rgba(5,5,6,.85)); }
+  .bg [data-k=hero]       { background-image: radial-gradient(ellipse at 50% 100%, rgba(242,181,68,.30), transparent 60%), url(img/bg/hero.jpg); }
+  .bg [data-k=overview]   { background-image: radial-gradient(ellipse at 20% 30%, rgba(76,154,255,.22), transparent 55%), url(img/bg/overview.jpg); }
+  .bg [data-k=timers]     { background-image: radial-gradient(ellipse at 70% 50%, rgba(164,107,255,.32), transparent 55%), url(img/bg/timers.jpg); }
+  .bg [data-k=kills]      { background-image: radial-gradient(ellipse at 30% 50%, rgba(255,75,75,.30), transparent 55%), url(img/bg/kills.jpg); }
+  .bg [data-k=multi]      { background-image: radial-gradient(ellipse at 70% 50%, rgba(255,140,40,.32), transparent 55%), url(img/bg/multi.jpg); }
+  .bg [data-k=objectives] { background-image: radial-gradient(ellipse at 30% 50%, rgba(79,209,127,.28), transparent 55%), url(img/bg/objectives.jpg); }
+  .bg [data-k=purchase]   { background-image: radial-gradient(ellipse at 70% 50%, rgba(76,154,255,.32), transparent 55%), url(img/bg/purchase.jpg); }
+  .bg [data-k=widgets]    { background-image: radial-gradient(ellipse at 50% 0%, rgba(242,181,68,.20), transparent 60%), url(img/bg/widgets.jpg); }
+  .bg [data-k=screens]    { background-image: radial-gradient(ellipse at 50% 50%, rgba(80,200,220,.20), transparent 60%), url(img/bg/screens.jpg); }
+  .bg [data-k=download]   { background-image: radial-gradient(ellipse at 50% 100%, rgba(242,181,68,.38), transparent 60%), url(img/bg/download.jpg); }
+  .bg [data-k=about]      { background-image: radial-gradient(ellipse at 80% 20%, rgba(255,75,75,.18), transparent 55%), url(img/bg/about.jpg); }
+  h1, h2, h3 { font-family: Oswald, Impact, sans-serif; font-weight: 600; text-transform: uppercase; margin: 0; line-height: 1.02; letter-spacing: .01em; }
+
+  /* nav */
+  nav { position: fixed; inset: 16px 0 auto; z-index: 10; display: flex; justify-content: center; pointer-events: none; }
+  .navbar { pointer-events: auto; display: flex; align-items: center; gap: 4px; padding: 6px; border-radius: 999px;
+    background: rgba(20,20,24,.7); backdrop-filter: blur(14px); border: 1px solid var(--line); }
+  .navbar a, .navbar button { padding: 8px 16px; border-radius: 999px; font-size: 14px; color: var(--muted); background: none; border: 0; cursor: pointer; font-family: inherit; }
+  .navbar a:hover, .navbar button:hover { color: var(--text); background: rgba(255,255,255,.06); }
+  .navbar .logo { color: var(--text); font: 600 15px Oswald, sans-serif; letter-spacing: .06em; }
+  .home { position: fixed; left: 18px; top: 8px; z-index: 11; width: 68px; height: 68px; display: grid; place-items: center; transition: transform .2s, filter .2s;
+    filter: drop-shadow(0 6px 14px rgba(0,0,0,.6)); }
+  .home img { width: 68px; height: 68px; }
+  .home:hover { transform: scale(1.08); filter: drop-shadow(0 0 16px rgba(214,170,96,.45)); }
+  .navbar .dl { background: var(--gold); color: #1a1205; font-weight: 600; }
+  .navbar .dl:hover { background: var(--gold2); color: #1a1205; }
+
+  /* buttons */
+  .btn { display: inline-flex; align-items: center; gap: 10px; padding: 16px 30px; border-radius: 999px; font-weight: 600; font-size: 17px;
+    background: linear-gradient(180deg, var(--gold2), var(--gold)); color: #1a1205; box-shadow: 0 0 40px rgba(242,181,68,.35), 0 0 0 1px rgba(255,219,138,.5) inset;
+    transition: transform .2s, box-shadow .2s; }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 0 70px rgba(242,181,68,.55), 0 0 0 1px rgba(255,219,138,.7) inset; }
+  .btn svg { width: 20px; height: 20px; }
+  .ghost { display: inline-flex; padding: 16px 26px; border-radius: 999px; border: 1px solid rgba(255,255,255,.22); color: var(--text); font-weight: 500;
+    background: rgba(8,8,10,.62); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .ghost:hover { background: rgba(20,20,24,.8); border-color: rgba(242,181,68,.5); }
+  .sub { color: var(--muted); font-size: 14px; margin-top: 14px; }
+
+  /* hero */
+  .hero { position: relative; min-height: 100vh; display: grid; place-items: center; text-align: center; padding: 120px 0 80px; overflow: hidden; }
+  .hero::after { content: ""; position: absolute; inset: 0; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 64px 64px; mask-image: radial-gradient(ellipse at center 40%, #000 20%, transparent 70%); opacity: .5; }
+  .hero > * { position: relative; z-index: 1; }
+  .eyebrow { display: inline-block; padding: 6px 14px; border-radius: 999px; border: 1px solid rgba(242,181,68,.35); color: var(--gold2); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
+  .hero h1 { font-size: clamp(48px, 9.5vw, 150px); margin: 22px 0 18px; font-weight: 700;
+    background: linear-gradient(180deg, #fff 30%, #a9a9b3); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero h1 em { font-style: normal; background: linear-gradient(180deg, var(--gold2), var(--gold) 70%); -webkit-background-clip: text; background-clip: text; }
+  .hero p.lead { max-width: 640px; margin: 0 auto 34px; color: #d2d2da; font-size: 19px; }
+  .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  /* live plate stream under the hero text */
+  .stream { position: relative; width: min(1100px, 100%); height: 300px; margin: 64px auto 0; border-radius: 24px; overflow: hidden;
+    background: radial-gradient(ellipse at 30% 20%, #1d2a22, transparent 60%), radial-gradient(ellipse at 80% 90%, #2a1616, transparent 55%), #0b0c0e;
+    border: 1px solid var(--line); box-shadow: 0 40px 120px rgba(0,0,0,.6); }
+  .stream .tag { position: absolute; left: 18px; top: 16px; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px; letter-spacing: .06em; text-transform: uppercase; }
+  .stream .tag i { width: 8px; height: 8px; border-radius: 50%; background: var(--red); box-shadow: 0 0 12px var(--red); animation: pulse 1.4s infinite; }
+  .stream .slot { position: absolute; left: 50%; top: 54%; width: min(560px, 88%); transform: translate(-50%, -50%); }
+  .stream .slot img { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) translateY(30px) scale(.94); opacity: 0;
+    transition: opacity .5s, transform .6s cubic-bezier(.2,.9,.3,1.2); max-height: 200px; width: auto; }
+  .stream .slot img.on { opacity: 1; transform: translate(-50%, -50%); }
+  .stream .w-rank { position: absolute; right: 14px; top: 12px; width: min(230px, 30%); }
+  .stream .w-timers { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(720px, 92%); opacity: .9; }
+  @keyframes pulse { 50% { opacity: .35; } }
+
+  /* overview */
+  section { padding: 120px 0; }
+  .kicker { color: var(--gold); font-size: 13px; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; }
+  .big { font-size: clamp(36px, 5.4vw, 76px); margin: 14px 0 0; }
+  .big span { color: var(--muted); }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 64px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 28px; }
+  .stat b { display: block; font: 600 clamp(40px, 5vw, 64px)/1 Oswald, sans-serif; color: var(--gold2); }
+  .stat span { color: var(--muted); font-size: 15px; }
+
+  /* product sections (one per plate) */
+  .feature { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; min-height: 86vh; padding: 60px 0; }
+  .feature.flip .art { order: 2; }
+  /* text on top, the picture below across the whole width (the timers strip is long and thin) */
+  .feature.wide { grid-template-columns: 1fr; gap: 40px; min-height: 0; padding: 120px 0 60px; }
+  .feature.wide .copy { display: grid; grid-template-columns: minmax(0, 1fr) 260px; column-gap: 56px; align-items: end; }
+  .feature.wide .copy > * { grid-column: 1; }
+  .feature.wide .copy p { max-width: 760px; margin-bottom: 0; }
+  .feature.wide .copy > .specs { grid-column: 2; grid-row: 1 / span 3; grid-template-columns: 1fr; align-self: end; }
+  .feature.wide .specs div { padding: 12px 18px; }
+  .feature.wide .specs b { font-size: 21px; }
+  .feature.wide .art { aspect-ratio: auto; padding: 56px 28px; }
+  .feature.wide .stack { width: 100%; }
+  .art, .stat, .tile, .screen, .panel, .download { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .art { position: relative; aspect-ratio: 1 / .8; border-radius: 32px; display: grid; place-items: center; overflow: hidden;
+    background: var(--card); border: 1px solid var(--line); }
+  .art::before { content: ""; position: absolute; width: 70%; height: 70%; border-radius: 50%; background: var(--glow, var(--gold)); filter: blur(90px); opacity: .28; }
+  .art .stack { position: relative; display: grid; gap: 14px; justify-items: center; width: 88%; }
+  .art .stack img { filter: drop-shadow(0 20px 40px rgba(0,0,0,.6)); transition: transform .4s; }
+  .art:hover .stack img { transform: translateY(-4px); }
+  .copy h2 { font-size: clamp(40px, 5vw, 72px); margin: 14px 0 22px; }
+  .copy p { color: #c9c9d3; font-size: 19px; margin: 0 0 30px; max-width: 520px; }
+  /* a soft dark patch behind the text keeps it readable over busy pictures */
+  .copy { position: relative; }
+  .copy::before { content: ""; position: absolute; inset: -60px -80px; z-index: -1; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(5,5,6,.82), rgba(5,5,6,.55) 60%, transparent); }
+  .copy h2, .copy p, .big, .hero p.lead { text-shadow: 0 2px 18px rgba(0,0,0,.85); }
+  .specs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border-radius: 18px; overflow: hidden; border: 1px solid var(--line); }
+  .specs div { background: var(--bg); padding: 18px; }
+  .specs b { display: block; font: 600 26px/1.1 Oswald, sans-serif; color: var(--text); }
+  .specs span { color: var(--muted); font-size: 13px; }
+
+  /* widget grid */
+  .grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; margin-top: 56px; }
+  .tile { background: var(--card); border: 1px solid var(--line); border-radius: 28px; padding: 28px; display: flex; flex-direction: column; gap: 22px; overflow: hidden; position: relative; }
+  .tile.s2 { grid-column: span 2; } .tile.s3 { grid-column: span 3; } .tile.s4 { grid-column: span 4; } .tile.s6 { grid-column: span 6; }
+  .tile.tall { grid-row: span 2; }
+  .tile h3 { font-size: 28px; }
+  .tile p { margin: 6px 0 0; color: var(--muted); font-size: 15px; }
+  .tile .pic { flex: 1; display: grid; place-items: center; min-height: 120px; }
+  .tile .pic img { max-height: 100%; filter: drop-shadow(0 16px 30px rgba(0,0,0,.55)); }
+  .tile.tall .pic img { max-height: 520px; }
+
+  /* screens */
+  .screens { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 56px; }
+  .screen { background: var(--card); border: 1px solid var(--line); border-radius: 28px; padding: 30px; }
+  .screen .ico { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: rgba(242,181,68,.1); color: var(--gold2); margin-bottom: 20px; }
+  .screen .ico svg { width: 26px; height: 26px; }
+  .screen h3 { font-size: 26px; margin-bottom: 8px; }
+  .screen p { color: var(--muted); margin: 0; font-size: 15px; }
+
+  /* download */
+  .download { position: relative; text-align: center; border-radius: 40px; padding: 100px 24px; overflow: hidden; border: 1px solid var(--line);
+    background: radial-gradient(ellipse at 50% 120%, rgba(242,181,68,.35), transparent 60%), var(--card); }
+  .download h2 { font-size: clamp(44px, 7vw, 104px); margin: 16px 0 20px; }
+  .download p { color: var(--muted); max-width: 560px; margin: 0 auto 36px; font-size: 18px; }
+  .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 64px auto 0; max-width: 960px; text-align: left; }
+  .steps div { background: rgba(0,0,0,.35); border: 1px solid var(--line); border-radius: 20px; padding: 22px; }
+  .steps b { font: 600 15px Oswald, sans-serif; color: var(--gold); letter-spacing: .1em; }
+  .steps p { margin: 6px 0 0; color: var(--text); font-size: 15px; text-align: left; max-width: none; }
+
+  /* about + support */
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 32px; padding: 40px; }
+  .panel h2 { font-size: 44px; margin: 14px 0 16px; }
+  .panel p { color: var(--muted); margin: 0 0 24px; }
+  .avatar { width: 84px; height: 84px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), #6b3d00); display: grid; place-items: center; font: 700 30px Oswald, sans-serif; color: #1a1205; }
+  .links { display: flex; flex-wrap: wrap; gap: 10px; }
+  .links a { padding: 10px 18px; border-radius: 999px; border: 1px solid var(--line); font-size: 15px; }
+  .links a:hover { border-color: rgba(242,181,68,.5); color: var(--gold2); }
+  .panel.support { background: radial-gradient(ellipse at 100% 0%, rgba(255,75,75,.18), transparent 55%), var(--card); }
+
+  footer { padding: 40px 0 60px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); margin-top: 120px; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  footer .legal { display: flex; gap: 20px; flex-wrap: wrap; }
+  footer a:hover { color: var(--text); }
+  .note { font-size: 12px; margin-top: 10px; max-width: 640px; }
+
+  /* features: picture from one side, text from the other; plates follow one by one */
+  .feature.reveal { opacity: 1; transform: none; }
+  .feature .art, .feature .copy, .feature .stack img { opacity: 0; transition: opacity 1s, transform 1.1s cubic-bezier(.16,.84,.24,1); }
+  .feature .art, .feature.flip .copy { transform: translateX(-180px); }
+  .feature .copy, .feature.flip .art { transform: translateX(180px); }
+  .feature .stack img { transform: translateX(-120px); }
+  .feature.flip .stack img { transform: translateX(120px); }
+  .feature .copy { transition-delay: .12s; }
+  .feature .stack img:nth-child(1) { transition-delay: .35s; }
+  .feature .stack img:nth-child(2) { transition-delay: .55s; }
+  .feature .stack img:nth-child(3) { transition-delay: .75s; }
+  .feature.in .art, .feature.in .copy, .feature.in .stack img { opacity: 1; transform: none; }
+  .tile.reveal:nth-child(odd), .screen.reveal:nth-child(1), .panel.reveal:nth-child(1) { transform: translateX(-140px); }
+  .tile.reveal:nth-child(even), .screen.reveal:nth-child(3), .panel.reveal:nth-child(2) { transform: translateX(140px); }
+  .tile.reveal.in, .screen.reveal.in, .panel.reveal.in { transform: none; }
+  @media (prefers-reduced-motion: reduce) { .feature .art, .feature .copy, .feature .stack img, .tile.reveal, .screen.reveal, .panel.reveal { opacity: 1; transform: none; transition: none; } }
+
+  /* scroll reveal */
+  .reveal { opacity: 0; transform: translateY(40px); transition: opacity .9s, transform .9s cubic-bezier(.2,.8,.2,1); }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } html { scroll-behavior: auto; } }
+
+  @media (max-width: 900px) {
+    .navbar .hide-m { display: none; }
+    .feature, .duo { grid-template-columns: 1fr; gap: 32px; min-height: 0; }
+    .feature.flip .art { order: 0; }
+    .feature.wide .copy { grid-template-columns: 1fr; row-gap: 24px; }
+    .feature.wide .copy > .specs { grid-column: 1; grid-row: auto; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .grid { grid-template-columns: 1fr; }
+    .tile.s2, .tile.s3, .tile.s4, .tile.s6 { grid-column: auto; }
+    .tile.tall { grid-row: auto; }
+    .screens, .steps { grid-template-columns: 1fr; }
+    .stream { height: 230px; }
+    section { padding: 80px 0; }
+    .panel { padding: 28px; }
+  }
+  @media (max-width: 600px) {
+    .home { left: 8px; top: 12px; width: 52px; height: 52px; }
+    .home img { width: 52px; height: 52px; }
+    nav { justify-content: flex-end; padding-right: 12px; }
+  }
+  @media (max-width: 520px) { .specs { grid-template-columns: 1fr; } .navbar a, .navbar button { padding: 8px 10px; } }
+</style>
+</head>
+<body>
+
+<div class="bg" aria-hidden="true"></div>
+<a class="home" href="#top" aria-label="Shard Overlay — на главную"><img src="img/icon-256.png" alt=""></a>
+<nav><div class="navbar">
+  <a class="logo" href="#top">SHARD</a>
+  <a class="hide-m" href="#features" data-t="nav.features">Возможности</a>
+  <a class="hide-m" href="#about" data-t="nav.about">Об авторе</a>
+  <a class="hide-m" href="#support" data-t="nav.support">Поддержать</a>
+  <button type="button" id="lang" aria-label="Language">EN</button>
+  <a class="dl" href="#download" data-t="nav.download">Скачать</a>
+</div></nav>
+
+<header class="hero" id="top" data-bg="hero">
+  <div class="wrap">
+    <span class="eyebrow" data-t="hero.eyebrow">Оверлей для стрима Dota 2 · бесплатно</span>
+    <h1 data-t-html="hero.title">Раскрой свой<br><em>игровой потенциал</em></h1>
+    <p class="lead" data-t="hero.lead">Каждое убийство, Рошан и покупка — красиво на экране у твоих зрителей. Настраивается за пару минут, работает с OBS.</p>
+    <div class="cta">
+      <a class="btn" href="#download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg><span data-t="hero.cta">Скачать для Windows</span></a>
+      <a class="ghost" href="#features" data-t="hero.more">Что умеет</a>
+    </div>
+    <div class="sub" data-t="hero.sub">v0.6.0 · Windows 10/11 · без регистрации</div>
+
+    <div class="stream" aria-label="Пример плашек на стриме">
+      <div class="tag"><i></i><span data-t="hero.live">Так это видят зрители</span></div>
+      <div class="slot" id="slot">
+        <img src="img/plate_firstblood.webp" alt="">
+        <img src="img/plate_kill.webp" alt="">
+        <img src="img/plate_multikill.webp" alt="">
+        <img src="img/plate_purchase.webp" alt="">
+        <img src="img/plate_roshan.webp" alt="">
+        <img src="img/plate_tormentor.webp" alt="">
+      </div>
+      <img class="w-rank" src="img/w_rank.webp" alt="">
+      <img class="w-timers" src="img/w_timers.webp?v=2" alt="">
+    </div>
+  </div>
+</header>
+
+<section id="features" data-bg="overview">
+  <div class="wrap reveal">
+    <div class="kicker" data-t="ov.kicker">Что умеет</div>
+    <h2 class="big" data-t="ov.title">Преврати свою трансляцию в турнир международного формата</h2>
+    <div class="stats">
+      <div class="stat"><b>10</b><span data-t="ov.s1">игроков: убийства с портретами</span></div>
+      <div class="stat"><b>17</b><span data-t="ov.s2">плашек и виджетов</span></div>
+      <div class="stat"><b>7</b><span data-t="ov.s3">языков интерфейса</span></div>
+      <div class="stat"><b>$0</b><span data-t="ov.s4">все функции бесплатно</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <article class="feature wide reveal" style="--glow: var(--violet)" data-bg="timers">
+    <div class="copy">
+      <div class="kicker" data-t="f0.k">Таймеры</div>
+      <h2 data-t="f0.t">Не проспи руны и Рошана</h2>
+      <p data-t="f0.p">Таймеры сами считают руны силы и богатства, святилища мудрости, Рошана, Аегис и смену дня и ночи. За несколько секунд до события — предупреждение со звуком, так что ты успеешь к руне, а зрители видят, что будет дальше.</p>
+      <div class="specs">
+        <div><b data-t="f0.s1b">Руны</b><span data-t="f0.s1">сила, богатство, мудрость</span></div>
+        <div><b data-t="f0.s2b">Рошан</b><span data-t="f0.s2">когда может появиться</span></div>
+        <div><b data-t="f0.s3b">Звук</b><span data-t="f0.s3">предупреждение заранее</span></div>
+      </div>
+    </div>
+    <div class="art"><div class="stack">
+      <img src="img/w_timers.webp?v=2" alt="Виджет таймеров карты" style="width:100%">
+    </div></div>
+  </article>
+
+  <article class="feature reveal" style="--glow: var(--red)" data-bg="kills">
+    <div class="art"><div class="stack">
+      <img src="img/plate_firstblood.webp" alt="Плашка первой крови" width="560">
+      <img src="img/plate_kill.webp" alt="Плашка убийства" width="460">
+    </div></div>
+    <div class="copy">
+      <div class="kicker" data-t="f1.k">Плашки убийств</div>
+      <h2 data-t="f1.t">Каждый фраг — событие</h2>
+      <p data-t="f1.p">Первая кровь, убийства, серии и прерванные серии всех десяти героев. Тебе решать, что показывать на экране.</p>
+      <div class="specs">
+        <div><b>10/10</b><span data-t="f1.s1">игроков в ленте</span></div>
+        <div><b>16:9 · 21:9</b><span data-t="f1.s2">любой экран</span></div>
+        <div><b>&lt;1 c</b><span data-t="f1.s3">задержка</span></div>
+      </div>
+    </div>
+  </article>
+
+  <article class="feature flip reveal" style="--glow: var(--gold)" data-bg="multi">
+    <div class="art"><div class="stack">
+      <img src="img/plate_multikill.webp" alt="Плашка тройного убийства" width="560">
+      <img src="img/plate_streak.webp" alt="Плашка прерванной серии" width="440">
+    </div></div>
+    <div class="copy">
+      <div class="kicker" data-t="f2.k">Мультикиллы</div>
+      <h2 data-t="f2.t">Rampage заслуживает сцены</h2>
+      <p data-t="f2.p">Двойные, тройные, ультра-убийства и Rampage — крупно и со звуком. Зритель не пропустит момент, даже если отвлёкся на чат.</p>
+      <div class="specs">
+        <div><b>×2 — ×5</b><span data-t="f2.s1">серии убийств</span></div>
+        <div><b data-t="f2.s2b">Звук</b><span data-t="f2.s2">свой на каждое</span></div>
+        <div><b data-t="f2.s3b">Свой вид</b><span data-t="f2.s3">цвета и рамки</span></div>
+      </div>
+    </div>
+  </article>
+
+  <article class="feature reveal" style="--glow: var(--green)" data-bg="objectives">
+    <div class="art"><div class="stack">
+      <img src="img/plate_roshan.webp" alt="Плашка: Рошан убит" width="480">
+      <img src="img/plate_tormentor.webp" alt="Плашка: Терзатель появился" width="480">
+      <img src="img/plate_building.webp" alt="Плашка: башня разрушена" width="480">
+    </div></div>
+    <div class="copy">
+      <div class="kicker" data-t="f3.k">Цели карты</div>
+      <h2 data-t="f3.t">Рошан, башни, Терзатель</h2>
+      <p data-t="f3.p">Кто забрал Аегис, какая башня упала, где появился Терзатель и куда переехал Рошан. Плюс выкупы — чтобы зритель понимал, почему драка пошла не так.</p>
+      <div class="specs">
+        <div><b data-t="f3.s1b">Аегис</b><span data-t="f3.s1">и его таймер</span></div>
+        <div><b data-t="f3.s2b">Здания</b><span data-t="f3.s2">наши и их</span></div>
+        <div><b data-t="f3.s3b">Выкупы</b><span data-t="f3.s3">обеих команд</span></div>
+      </div>
+    </div>
+  </article>
+
+  <article class="feature flip reveal" style="--glow: var(--blue)" data-bg="purchase">
+    <div class="art"><div class="stack">
+      <img src="img/plate_purchase.webp" alt="Плашка покупки предмета" width="560">
+    </div></div>
+    <div class="copy">
+      <div class="kicker" data-t="f4.k">Покупки</div>
+      <h2 data-t="f4.t">Собрал Аганим — покажи</h2>
+      <p data-t="f4.p">Дорогие предметы появляются на экране с ценой и временем покупки. Порог цены выбираешь сам: только ключевые артефакты или всё подряд.</p>
+      <div class="specs">
+        <div><b data-t="f4.s1b">Цена</b><span data-t="f4.s1">и минута матча</span></div>
+        <div><b data-t="f4.s2b">Порог</b><span data-t="f4.s2">от скольки золота</span></div>
+        <div><b data-t="f4.s3b">Улучшения</b><span data-t="f4.s3">Аганим, Шард</span></div>
+      </div>
+    </div>
+  </article>
+</div>
+
+<section id="widgets" data-bg="widgets">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="kicker" data-t="w.k">Виджеты</div>
+      <h2 class="big" data-t-html="w.t">Собери свою сцену.<br><span>Каждый виджет — отдельный источник в OBS.</span></h2>
+    </div>
+    <div class="grid">
+      <div class="tile s4 reveal"><div><h3 data-t="w.timers">Таймеры карты</h3><p data-t="w.timers.p">Руны, святилища, Рошан, Аегис, день и ночь — с предупреждением заранее.</p></div><div class="pic"><img src="img/w_timers.webp?v=2" alt=""></div></div>
+      <div class="tile s2 tall reveal"><div><h3 data-t="w.card">Карточка героя</h3><p data-t="w.card.p">Итог матча: KDA, net worth, предметы, MMR.</p></div><div class="pic"><img src="img/w_card.webp" alt=""></div></div>
+      <div class="tile s2 reveal"><div><h3 data-t="w.items">Инвентарь</h3><p data-t="w.items.p">Предметы и минута покупки.</p></div><div class="pic"><img src="img/w_items.webp" alt=""></div></div>
+      <div class="tile s2 reveal"><div><h3 data-t="w.score">Счёт</h3><p data-t="w.score.p">Убийства команд и время.</p></div><div class="pic"><img src="img/w_score.webp" alt=""></div></div>
+      <div class="tile s4 reveal"><div><h3 data-t="w.team">Команды</h3><p data-t="w.team.p">Все десять героев с KDA и сериями.</p></div><div class="pic"><img src="img/w_team.webp" alt=""></div></div>
+      <div class="tile s2 reveal"><div><h3 data-t="w.stats">Статистика</h3><p data-t="w.stats.p">KDA, GPM, золото, выкуп.</p></div><div class="pic"><img src="img/w_stats.webp" alt=""></div></div>
+    </div>
+  </div>
+</section>
+
+<section data-bg="screens">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="kicker" data-t="sc.k">И это не всё</div>
+      <h2 class="big" data-t-html="sc.t">Не только для зрителей.<br><span>Помогает и тебе во время игры.</span></h2>
+    </div>
+    <div class="screens">
+      <div class="screen reveal"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></div>
+        <h3 data-t="sc.1">Второй экран</h3><p data-t="sc.1p">Лента событий, ранг и подсказки о рунах и Рошане на соседнем мониторе.</p></div>
+      <div class="screen reveal"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg></div>
+        <h3 data-t="sc.2">Телефон</h3><p data-t="sc.2p">Таймеры и события на телефоне по домашней Wi-Fi. Наведи камеру на QR-код — и готово.</p></div>
+      <div class="screen reveal"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></div>
+        <h3 data-t="sc.3">История матчей</h3><p data-t="sc.3p">90 дней игр: победы, KDA, герои и изменение MMR.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="download" data-bg="download">
+  <div class="wrap">
+    <div class="download reveal">
+      <div class="kicker" data-t="d.k">Бесплатно для всех</div>
+      <h2 data-t="d.t">Готов выйти в эфир?</h2>
+      <p data-t="d.p">Один файл, без установки и регистрации. Программа сама настроит Dota 2 и сообщит, когда выйдет новая версия.</p>
+      <a class="btn" href="https://github.com/Shautbenaht-world/shard-overlay/releases/latest"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg><span data-t="hero.cta">Скачать для Windows</span></a>
+      <div class="sub"><a href="https://github.com/Shautbenaht-world/shard-overlay/releases" data-t="d.notes">Что нового в версиях →</a></div>
+      <div class="steps">
+        <div><b>01</b><p data-t="d.s1">Скачай и запусти Shard Overlay.exe</p></div>
+        <div><b>02</b><p data-t="d.s2">Перезапусти Dota 2 — программа подключится сама</p></div>
+        <div><b>03</b><p data-t="d.s3">Добавь ссылки виджетов в OBS как «Браузер»</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-bg="about">
+  <div class="wrap duo">
+    <div class="panel reveal" id="about">
+      <div class="avatar">SW</div>
+      <h2 data-t="a.t">Об авторе</h2>
+      <p data-t="a.p">Привет! Я Shautbenaht — играю в Dota 2 и стримлю. Сделал оверлей, которого мне самому не хватало, и теперь делюсь им со всеми. [Здесь будет твой текст.]</p>
+      <div class="links"><a href="#">YouTube</a><a href="#">Twitch</a><a href="#">Telegram</a><a href="#">Discord</a></div>
+    </div>
+    <div class="panel support reveal" id="support">
+      <div class="avatar" style="background: linear-gradient(135deg, #ff6b6b, #7a1010); color: #fff">♥</div>
+      <h2 data-t="s.t">Поддержать</h2>
+      <p data-t="s.p">Shard Overlay бесплатный и останется таким. Если он делает твои стримы лучше — можно поддержать разработку. Это помогает выпускать обновления быстрее.</p>
+      <div class="links"><a href="#">Boosty</a><a href="#">DonationAlerts</a><a href="#">Ko-fi</a></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>© 2026 Shard Overlay
+      <div class="note" data-t="foot.note">Не связан с Valve Corporation. Dota 2 — товарный знак Valve Corporation.</div>
+    </div>
+    <div class="legal">
+      <a href="#" data-t="foot.terms">Пользовательское соглашение</a>
+      <a href="#" data-t="foot.privacy">Конфиденциальность</a>
+      <a href="https://github.com/Shautbenaht-world/shard-overlay/releases">GitHub</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // English texts; Russian stays in the HTML
+  const EN = {
+    "nav.features": "Features", "nav.about": "About", "nav.support": "Support", "nav.download": "Download",
+    "hero.eyebrow": "Dota 2 stream overlay · free", "hero.title": "Unlock your<br><em>game potential</em>",
+    "hero.lead": "Every kill, Roshan and purchase looks great on your viewers' screen. Set up in a couple of minutes, works with OBS.",
+    "hero.cta": "Download for Windows", "hero.more": "See features", "hero.sub": "v0.6.0 · Windows 10/11 · no sign-up", "hero.live": "What your viewers see",
+    "ov.kicker": "What it does", "ov.title": "Turn your stream into an international-level tournament broadcast",
+    "ov.s1": "players: kills with portraits", "ov.s2": "plates and widgets", "ov.s3": "interface languages", "ov.s4": "every feature free",
+    "f0.k": "Timers", "f0.t": "Never miss a rune or Roshan", "f0.p": "Timers count power and bounty runes, wisdom shrines, Roshan, the Aegis and day and night for you. A few seconds before each one you get a sound alert, so you make it to the rune, and viewers see what's coming next.",
+    "f0.s1b": "Runes", "f0.s1": "power, bounty, wisdom", "f0.s2b": "Roshan", "f0.s2": "when he may be up", "f0.s3b": "Sound", "f0.s3": "early warning",
+    "f1.k": "Kill plates", "f1.t": "Every frag is an event", "f1.p": "First blood, kills, streaks and ended streaks of all ten heroes. You decide what shows up on screen.",
+    "f1.s1": "players in the feed", "f1.s2": "any screen", "f1.s3": "delay",
+    "f2.k": "Multi-kills", "f2.t": "Rampage deserves a stage", "f2.p": "Double, triple, ultra kills and Rampage: big and with sound. Viewers won't miss it even if they were reading chat.",
+    "f2.s1": "kill streaks", "f2.s2b": "Sound", "f2.s2": "one for each", "f2.s3b": "Your look", "f2.s3": "colours and frames",
+    "f3.k": "Map objectives", "f3.t": "Roshan, towers, Tormentor", "f3.p": "Who took the Aegis, which tower fell, where the Tormentor spawned and where Roshan moved. Plus buybacks, so viewers understand why the fight went wrong.",
+    "f3.s1b": "Aegis", "f3.s1": "and its timer", "f3.s2b": "Buildings", "f3.s2": "ours and theirs", "f3.s3b": "Buybacks", "f3.s3": "both teams",
+    "f4.k": "Purchases", "f4.t": "Got Aghanim's? Show it", "f4.p": "Expensive items appear on screen with their price and purchase time. You choose the price threshold: only key items or everything.",
+    "f4.s1b": "Price", "f4.s1": "and match minute", "f4.s2b": "Threshold", "f4.s2": "from how much gold", "f4.s3b": "Upgrades", "f4.s3": "Scepter, Shard",
+    "w.k": "Widgets", "w.t": "Build your scene.<br><span>Each widget is its own OBS source.</span>",
+    "w.timers": "Map timers", "w.timers.p": "Runes, shrines, Roshan, Aegis, day and night, with an early warning.",
+    "w.card": "Hero card", "w.card.p": "Match result: KDA, net worth, items, MMR.", "w.items": "Inventory", "w.items.p": "Items and when they were bought.",
+    "w.score": "Score", "w.score.p": "Team kills and time.", "w.team": "Teams", "w.team.p": "All ten heroes with KDA and streaks.", "w.stats": "Stats", "w.stats.p": "KDA, GPM, gold, buyback.",
+    "sc.k": "And there's more", "sc.t": "Not only for viewers.<br><span>It helps you while you play, too.</span>",
+    "sc.1": "Second screen", "sc.1p": "Event feed, rank and rune and Roshan alerts on your other monitor.",
+    "sc.2": "Phone", "sc.2p": "Timers and events on your phone over home Wi-Fi. Scan the QR code and you're in.",
+    "sc.3": "Match history", "sc.3p": "90 days of games: wins, KDA, heroes and MMR change.",
+    "d.k": "Free for everyone", "d.t": "Ready to go live?", "d.p": "One file, no installer, no sign-up. The program sets up Dota 2 for you and tells you when a new version is out.",
+    "d.notes": "What's new →", "d.s1": "Download and run Shard Overlay.exe", "d.s2": "Restart Dota 2: the program connects by itself", "d.s3": "Add the widget links to OBS as Browser sources",
+    "a.t": "About me", "a.p": "Hi! I'm Shautbenaht: I play Dota 2 and stream. I built the overlay I was missing myself, and now I share it with everyone. [Your text goes here.]",
+    "s.t": "Support", "s.p": "Shard Overlay is free and will stay free. If it makes your streams better, you can support development. It helps updates come out faster.",
+    "foot.note": "Not affiliated with Valve Corporation. Dota 2 is a trademark of Valve Corporation.", "foot.terms": "Terms of use", "foot.privacy": "Privacy",
+  };
+  const RU = {};
+  document.querySelectorAll("[data-t]").forEach((el) => { RU[el.dataset.t] = el.textContent; });
+  document.querySelectorAll("[data-t-html]").forEach((el) => { RU[el.dataset.tHtml] = el.innerHTML; });
+  function setLang(lang) {
+    const D = lang === "en" ? EN : RU;
+    document.documentElement.lang = lang;
+    document.querySelectorAll("[data-t]").forEach((el) => { if (D[el.dataset.t]) el.textContent = D[el.dataset.t]; });
+    document.querySelectorAll("[data-t-html]").forEach((el) => { if (D[el.dataset.tHtml]) el.innerHTML = D[el.dataset.tHtml]; });
+    document.getElementById("lang").textContent = lang === "en" ? "RU" : "EN";
+    // plates and widgets: their texts are in the picture, English ones live in img/en/
+    document.querySelectorAll('img[src*="/plate_"], img[src*="/w_"]').forEach((im) => {
+      const name = im.getAttribute("src").split("/").pop();
+      im.setAttribute("src", (lang === "en" ? "img/en/" : "img/") + name);
+    });
+    try { localStorage.setItem("lang", lang); } catch (e) {}
+  }
+  let lang = "ru";
+  try { lang = localStorage.getItem("lang") || (navigator.language.startsWith("ru") || navigator.language.startsWith("uk") ? "ru" : "en"); } catch (e) {}
+  if (lang === "en") setLang("en");
+  document.getElementById("lang").onclick = () => setLang(document.documentElement.lang === "en" ? "ru" : "en");
+
+  // the hero "stream": plates come one after another, like in a match
+  const plates = [...document.querySelectorAll("#slot img")];
+  let i = 0;
+  plates[0].classList.add("on");
+  setInterval(() => { plates[i].classList.remove("on"); i = (i + 1) % plates.length; plates[i].classList.add("on"); }, 2600);
+
+  // backdrop: the section in the middle of the screen picks the picture
+  const bg = document.querySelector(".bg");
+  const layers = {};
+  document.querySelectorAll("[data-bg]").forEach((el) => {
+    const k = el.dataset.bg;
+    if (!layers[k]) { const d = document.createElement("div"); d.dataset.k = k; bg.appendChild(d); layers[k] = d; }
+  });
+  layers.hero.classList.add("on");
+  const pick = new IntersectionObserver((es) => es.forEach((e) => {
+    if (!e.isIntersecting) return;
+    Object.values(layers).forEach((d) => d.classList.toggle("on", d === layers[e.target.dataset.bg]));
+  }), { rootMargin: "-50% 0px -50% 0px" });
+  document.querySelectorAll("[data-bg]").forEach((el) => pick.observe(el));
+
+  // sections slide in as you scroll
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -12% 0px" });
+  document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+</script>
+</body>
+</html>
