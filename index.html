@@ -6,6 +6,7 @@
 <title>Shard Overlay</title>
 <meta name="description" content="Бесплатный оверлей для стрима Dota 2: убийства всех 10 игроков, таймеры, виджеты, второй экран.">
 <link rel="icon" href="img/icon.png">
+<script>document.documentElement.classList.add("wait"); setTimeout(() => document.documentElement.classList.remove("wait"), 1500);</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -56,12 +57,27 @@
   .navbar .dl { background: var(--gold); color: #1a1205; font-weight: 600; }
   .navbar .dl:hover { background: var(--gold2); color: #1a1205; }
 
+  html.wait body { visibility: hidden; }
+  /* language menu: codes in letters, no flags */
+  .langs { position: relative; }
+  .langs > button { display: inline-flex; align-items: center; gap: 6px; }
+  .langs > button svg { width: 12px; height: 12px; }
+  .langs ul { position: absolute; right: 0; top: calc(100% + 10px); margin: 0; padding: 6px; list-style: none; min-width: 190px; display: none;
+    background: rgba(14,14,18,.96); border: 1px solid var(--line); border-radius: 16px; backdrop-filter: blur(14px); box-shadow: 0 20px 50px rgba(0,0,0,.5); }
+  .langs.open ul { display: block; }
+  .langs li button { width: 100%; display: flex; gap: 12px; align-items: center; text-align: left; border-radius: 10px; padding: 9px 12px; font-size: 14px; color: var(--text); }
+  .langs li button b { font: 600 12px Oswald, sans-serif; letter-spacing: .08em; color: var(--gold); width: 22px; }
+  .langs li button[aria-current] { background: rgba(242,181,68,.12); }
+
   /* buttons */
   .btn { display: inline-flex; align-items: center; gap: 10px; padding: 16px 30px; border-radius: 999px; font-weight: 600; font-size: 17px;
     background: linear-gradient(180deg, var(--gold2), var(--gold)); color: #1a1205; box-shadow: 0 0 40px rgba(242,181,68,.35), 0 0 0 1px rgba(255,219,138,.5) inset;
     transition: transform .2s, box-shadow .2s; }
   .btn:hover { transform: translateY(-2px); box-shadow: 0 0 70px rgba(242,181,68,.55), 0 0 0 1px rgba(255,219,138,.7) inset; }
   .btn svg { width: 20px; height: 20px; }
+  .btn .size { font-weight: 500; opacity: .7; white-space: nowrap; }
+  @media (max-width: 520px) { .btn { padding: 15px 22px; font-size: 16px; text-align: left; } }
+  .btn .size:empty { display: none; }
   .ghost { display: inline-flex; padding: 16px 26px; border-radius: 999px; border: 1px solid rgba(255,255,255,.22); color: var(--text); font-weight: 500;
     background: rgba(8,8,10,.62); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
   .ghost:hover { background: rgba(20,20,24,.8); border-color: rgba(242,181,68,.5); }
@@ -75,8 +91,14 @@
   .eyebrow { display: inline-block; padding: 6px 14px; border-radius: 999px; border: 1px solid rgba(242,181,68,.35); color: var(--gold2); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
   .hero h1 { font-size: clamp(48px, 9.5vw, 150px); margin: 22px 0 18px; font-weight: 700;
     background: linear-gradient(180deg, #fff 30%, #a9a9b3); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  html[lang=ru] .hero h1, html[lang=uk] .hero h1 { font-size: clamp(40px, 7.6vw, 124px); }   /* «ПОТЕНЦИАЛ» is long: keep two lines */
   .hero h1 em { font-style: normal; background: linear-gradient(180deg, var(--gold2), var(--gold) 70%); -webkit-background-clip: text; background-clip: text; }
   .hero p.lead { max-width: 640px; margin: 0 auto 34px; color: #d2d2da; font-size: 19px; }
+  .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: -12px auto 34px; max-width: 1040px; }
+  .chips span { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px; font-size: 14px; color: var(--text);
+    background: rgba(8,8,10,.55); border: 1px solid rgba(242,181,68,.35); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .chips i { font-style: normal; }
+  .chips svg { width: 16px; height: 16px; color: var(--gold2); flex: none; }
   .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
   /* live plate stream under the hero text */
@@ -161,8 +183,17 @@
   .download p { color: var(--muted); max-width: 560px; margin: 0 auto 36px; font-size: 18px; }
   .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 64px auto 0; max-width: 960px; text-align: left; }
   .steps div { background: rgba(0,0,0,.35); border: 1px solid var(--line); border-radius: 20px; padding: 22px; }
-  .steps b { font: 600 15px Oswald, sans-serif; color: var(--gold); letter-spacing: .1em; }
+  .steps svg { width: 26px; height: 26px; color: var(--gold); }
   .steps p { margin: 6px 0 0; color: var(--text); font-size: 15px; text-align: left; max-width: none; }
+
+  .trust { max-width: 960px; margin: 14px auto 0; text-align: left; background: rgba(0,0,0,.35); border: 1px solid var(--line); border-radius: 20px; padding: 22px 24px;
+    display: grid; grid-template-columns: 26px minmax(0, 1fr); column-gap: 16px; }
+  .trust > svg { width: 26px; height: 26px; color: var(--gold); }
+  .trust h3 { font: 600 17px Inter, sans-serif; text-transform: none; margin: 2px 0 6px; }
+  .trust p { margin: 0; color: var(--muted); font-size: 15px; max-width: none; }
+  .sha { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; font-size: 13px; color: var(--muted); }
+  .sha code { font: 12px ui-monospace, Consolas, monospace; color: var(--text); background: rgba(255,255,255,.05); padding: 6px 10px; border-radius: 8px; word-break: break-all; }
+  .sha button { font: 500 13px Inter, sans-serif; color: var(--gold2); background: none; border: 1px solid rgba(242,181,68,.4); border-radius: 999px; padding: 5px 14px; cursor: pointer; }
 
   /* about + support */
   .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -236,13 +267,13 @@
 <body>
 
 <div class="bg" aria-hidden="true"></div>
-<a class="home" href="#top" aria-label="Shard Overlay — на главную"><img src="img/icon-256.png" alt=""></a>
+<a class="home" href="#top" aria-label="Shard Overlay"><img src="img/icon-256.png" alt=""></a>
 <nav><div class="navbar">
   <a class="logo" href="#top">SHARD</a>
   <a class="hide-m" href="#features" data-t="nav.features">Возможности</a>
   <a class="hide-m" href="#about" data-t="nav.about">Об авторе</a>
   <a class="hide-m" href="#support" data-t="nav.support">Поддержать</a>
-  <button type="button" id="lang" aria-label="Language">EN</button>
+  <div class="langs" id="langs"><button type="button" id="lang" aria-haspopup="true" aria-expanded="false" aria-label="Language"><span>EN</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><ul></ul></div>
   <a class="dl" href="#download" data-t="nav.download">Скачать</a>
 </div></nav>
 
@@ -250,12 +281,18 @@
   <div class="wrap">
     <span class="eyebrow" data-t="hero.eyebrow">Оверлей для стрима Dota 2 · бесплатно</span>
     <h1 data-t-html="hero.title">Раскрой свой<br><em>игровой потенциал</em></h1>
-    <p class="lead" data-t="hero.lead">Каждое убийство, Рошан и покупка — красиво на экране у твоих зрителей. Настраивается за пару минут, работает с OBS.</p>
+    <p class="lead" data-t="hero.lead">Каждое убийство, Рошан и покупка красиво смотрятся на экране у твоих зрителей. Настраивается за пару минут, работает с OBS.</p>
+    <div class="chips">
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg><i data-t="chip.1">Защита от стрим-снайпинга</i></span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="14" height="10" rx="2"/><rect x="17" y="8" width="5" height="12" rx="1"/><path d="M6 18h6"/></svg><i data-t="chip.2">Второй экран и телефон</i></span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg><i data-t="chip.3">Таймеры рун и Рошана</i></span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8a6 6 0 010 8.4M7.8 16.2a6 6 0 010-8.4M19.1 4.9a10 10 0 010 14.2M4.9 19.1a10 10 0 010-14.2"/></svg><i data-t="chip.4">Работает с OBS</i></span>
+    </div>
     <div class="cta">
-      <a class="btn" href="https://github.com/Shautbenaht-world/shard-overlay/releases/latest/download/ShardOverlay.exe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg><span data-t="hero.cta">Скачать для Windows</span></a>
+      <a class="btn" href="https://github.com/Shautbenaht-world/shard-overlay/releases/latest/download/ShardOverlay.exe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg><span data-t="hero.cta">Скачать для Windows</span><span class="size"></span></a>
       <a class="ghost" href="#features" data-t="hero.more">Что умеет</a>
     </div>
-    <div class="sub" data-t="hero.sub">v0.6.0 · Windows 10/11 · без регистрации</div>
+    <div class="sub"><span class="ver">v0.6.0</span> · Windows 10/11 · <span data-t="hero.nosign">без регистрации</span></div>
 
     <div class="stream" aria-label="Пример плашек на стриме">
       <div class="tag"><i></i><span data-t="hero.live">Так это видят зрители</span></div>
@@ -291,7 +328,7 @@
     <div class="copy">
       <div class="kicker" data-t="f0.k">Таймеры</div>
       <h2 data-t="f0.t">Не проспи руны и Рошана</h2>
-      <p data-t="f0.p">Таймеры сами считают руны силы и богатства, святилища мудрости, Рошана, Аегис и смену дня и ночи. За несколько секунд до события — предупреждение со звуком, так что ты успеешь к руне, а зрители видят, что будет дальше.</p>
+      <p data-t="f0.p">Таймеры сами считают руны силы и богатства, святилища мудрости, Рошана, Аегис и смену дня и ночи. За несколько секунд до события звучит предупреждение, так что ты успеешь к руне, а зрители видят, что будет дальше.</p>
       <div class="specs">
         <div><b data-t="f0.s1b">Руны</b><span data-t="f0.s1">сила, богатство, мудрость</span></div>
         <div><b data-t="f0.s2b">Рошан</b><span data-t="f0.s2">когда может появиться</span></div>
@@ -328,7 +365,7 @@
     <div class="copy">
       <div class="kicker" data-t="f2.k">Мультикиллы</div>
       <h2 data-t="f2.t">Rampage заслуживает сцены</h2>
-      <p data-t="f2.p">Двойные, тройные, ультра-убийства и Rampage — крупно и со звуком. Зритель не пропустит момент, даже если отвлёкся на чат.</p>
+      <p data-t="f2.p">Двойные, тройные, ультра-убийства и Rampage показываются крупно и со звуком. Зритель не пропустит момент, даже если отвлёкся на чат.</p>
       <div class="specs">
         <div><b>×2 — ×5</b><span data-t="f2.s1">серии убийств</span></div>
         <div><b data-t="f2.s2b">Звук</b><span data-t="f2.s2">свой на каждое</span></div>
@@ -346,7 +383,7 @@
     <div class="copy">
       <div class="kicker" data-t="f3.k">Цели карты</div>
       <h2 data-t="f3.t">Рошан, башни, Терзатель</h2>
-      <p data-t="f3.p">Кто забрал Аегис, какая башня упала, где появился Терзатель и куда переехал Рошан. Плюс выкупы — чтобы зритель понимал, почему драка пошла не так.</p>
+      <p data-t="f3.p">Кто забрал Аегис, какая башня упала, где появился Терзатель и куда переехал Рошан. Плюс выкупы, чтобы зритель понимал, почему драка пошла не так.</p>
       <div class="specs">
         <div><b data-t="f3.s1b">Аегис</b><span data-t="f3.s1">и его таймер</span></div>
         <div><b data-t="f3.s2b">Здания</b><span data-t="f3.s2">наши и их</span></div>
@@ -376,10 +413,10 @@
   <div class="wrap">
     <div class="reveal">
       <div class="kicker" data-t="w.k">Виджеты</div>
-      <h2 class="big" data-t-html="w.t">Собери свою сцену.<br><span>Каждый виджет — отдельный источник в OBS.</span></h2>
+      <h2 class="big" data-t-html="w.t">Собери свою сцену.<br><span>Каждый виджет добавляется в OBS отдельно.</span></h2>
     </div>
     <div class="grid">
-      <div class="tile s4 reveal"><div><h3 data-t="w.timers">Таймеры карты</h3><p data-t="w.timers.p">Руны, святилища, Рошан, Аегис, день и ночь — с предупреждением заранее.</p></div><div class="pic"><img src="img/w_timers.webp?v=2" alt=""></div></div>
+      <div class="tile s4 reveal"><div><h3 data-t="w.timers">Таймеры карты</h3><p data-t="w.timers.p">Руны, святилища, Рошан, Аегис, день и ночь, с предупреждением заранее.</p></div><div class="pic"><img src="img/w_timers.webp?v=2" alt=""></div></div>
       <div class="tile s2 tall reveal"><div><h3 data-t="w.card">Карточка героя</h3><p data-t="w.card.p">Итог матча: KDA, net worth, предметы, MMR.</p></div><div class="pic"><img src="img/w_card.webp" alt=""></div></div>
       <div class="tile s2 reveal"><div><h3 data-t="w.items">Инвентарь</h3><p data-t="w.items.p">Предметы и минута покупки.</p></div><div class="pic"><img src="img/w_items.webp" alt=""></div></div>
       <div class="tile s2 reveal"><div><h3 data-t="w.score">Счёт</h3><p data-t="w.score.p">Убийства команд и время.</p></div><div class="pic"><img src="img/w_score.webp" alt=""></div></div>
@@ -399,7 +436,7 @@
       <div class="screen reveal"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></div>
         <h3 data-t="sc.1">Второй экран</h3><p data-t="sc.1p">Лента событий, ранг и подсказки о рунах и Рошане на соседнем мониторе.</p></div>
       <div class="screen reveal"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg></div>
-        <h3 data-t="sc.2">Телефон</h3><p data-t="sc.2p">Таймеры и события на телефоне по домашней Wi-Fi. Наведи камеру на QR-код — и готово.</p></div>
+        <h3 data-t="sc.2">Телефон</h3><p data-t="sc.2p">Таймеры и события на телефоне по домашней Wi-Fi. Наведи камеру на QR-код, и готово.</p></div>
       <div class="screen reveal"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></div>
         <h3 data-t="sc.3">История матчей</h3><p data-t="sc.3p">90 дней игр: победы, KDA, герои и изменение MMR.</p></div>
     </div>
@@ -412,12 +449,20 @@
       <div class="kicker" data-t="d.k">Бесплатно для всех</div>
       <h2 data-t="d.t">Готов выйти в эфир?</h2>
       <p data-t="d.p">Один файл, без установки и регистрации. Программа сама настроит Dota 2 и сообщит, когда выйдет новая версия.</p>
-      <a class="btn" href="https://github.com/Shautbenaht-world/shard-overlay/releases/latest/download/ShardOverlay.exe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg><span data-t="hero.cta">Скачать для Windows</span></a>
+      <a class="btn" href="https://github.com/Shautbenaht-world/shard-overlay/releases/latest/download/ShardOverlay.exe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg><span data-t="hero.cta">Скачать для Windows</span><span class="size"></span></a>
       <div class="sub"><a href="https://github.com/Shautbenaht-world/shard-overlay/releases" data-t="d.notes">Что нового в версиях →</a></div>
       <div class="steps">
-        <div><b>01</b><p data-t="d.s1">Скачай и запусти ShardOverlay.exe</p></div>
-        <div><b>02</b><p data-t="d.s2">Перезапусти Dota 2 — программа подключится сама</p></div>
-        <div><b>03</b><p data-t="d.s3">Добавь ссылки виджетов в OBS как «Браузер»</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg><p data-t="d.s1">Скачай и запусти ShardOverlay.exe</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0115.5-6.3L21 8M21 3v5h-5M21 12a9 9 0 01-15.5 6.3L3 16M3 21v-5h5"/></svg><p data-t="d.s2">Перезапусти Dota 2, программа подключится сама</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M10 9l4 2-4 2z"/></svg><p data-t="d.s3">Добавь ссылки виджетов в OBS как «Браузер»</p></div>
+      </div>
+      <div class="trust">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M12 8v4M12 16h.01"/></svg>
+        <div>
+          <h3 data-t="d.ss.t">Windows показывает синее окно?</h3>
+          <p data-t="d.ss.p">У программы пока нет платной цифровой подписи, поэтому Windows её не знает. Нажми «Подробнее», затем «Выполнить в любом случае». Проверить, что файл оригинальный, можно по SHA-256 ниже.</p>
+          <div class="sha">SHA-256 <code id="sha">6422c01b51d3f0169979738594155f1bb0ce97025eaf2da9ac6c3233327f0d44</code><button type="button" id="copy" data-t="d.copy">Копировать</button></div>
+        </div>
       </div>
     </div>
   </div>
@@ -428,13 +473,13 @@
     <div class="panel reveal" id="about">
       <div class="avatar">SW</div>
       <h2 data-t="a.t">Об авторе</h2>
-      <p data-t="a.p">Привет! Я Shautbenaht — играю в Dota 2 и стримлю. Сделал оверлей, которого мне самому не хватало, и теперь делюсь им со всеми.</p>
+      <p data-t="a.p">Привет! Я Shautbenaht, играю в Dota 2 и стримлю. Сделал оверлей, которого мне самому не хватало, и теперь делюсь им со всеми.</p>
       <div class="links"><a href="#">YouTube</a><a href="#">Twitch</a><a href="#">Telegram</a><a href="#">Discord</a></div>
     </div>
     <div class="panel support reveal" id="support">
       <div class="avatar" style="background: linear-gradient(135deg, #ff6b6b, #7a1010); color: #fff">♥</div>
       <h2 data-t="s.t">Поддержать</h2>
-      <p data-t="s.p">Shard Overlay бесплатный и останется таким. Если он делает твои стримы лучше — можно поддержать разработку. Это помогает выпускать обновления быстрее.</p>
+      <p data-t="s.p">Shard Overlay бесплатный и останется таким. Если он делает твои стримы лучше, можно поддержать разработку. Это помогает выпускать обновления быстрее.</p>
       <div class="links"><a href="#">Boosty</a><a href="#">DonationAlerts</a><a href="#">Ko-fi</a></div>
     </div>
   </div>
@@ -453,59 +498,72 @@
   </div>
 </footer>
 
+<script src="i18n.js"></script>
 <script>
-  // English texts; Russian stays in the HTML
-  const EN = {
-    "nav.features": "Features", "nav.about": "About", "nav.support": "Support", "nav.download": "Download",
-    "hero.eyebrow": "Dota 2 stream overlay · free", "hero.title": "Unlock your<br><em>game potential</em>",
-    "hero.lead": "Every kill, Roshan and purchase looks great on your viewers' screen. Set up in a couple of minutes, works with OBS.",
-    "hero.cta": "Download for Windows", "hero.more": "See features", "hero.sub": "v0.6.0 · Windows 10/11 · no sign-up", "hero.live": "What your viewers see",
-    "ov.kicker": "What it does", "ov.title": "Turn your stream into an international-level tournament broadcast",
-    "ov.s1": "players: kills with portraits", "ov.s2": "plates and widgets", "ov.s3": "interface languages", "ov.s4": "every feature free",
-    "f0.k": "Timers", "f0.t": "Never miss a rune or Roshan", "f0.p": "Timers count power and bounty runes, wisdom shrines, Roshan, the Aegis and day and night for you. A few seconds before each one you get a sound alert, so you make it to the rune, and viewers see what's coming next.",
-    "f0.s1b": "Runes", "f0.s1": "power, bounty, wisdom", "f0.s2b": "Roshan", "f0.s2": "when he may be up", "f0.s3b": "Sound", "f0.s3": "early warning",
-    "f1.k": "Kill plates", "f1.t": "Every frag is an event", "f1.p": "First blood, kills, streaks and ended streaks of all ten heroes. You decide what shows up on screen.",
-    "f1.s1": "players in the feed", "f1.s2": "any screen", "f1.s3": "delay",
-    "f2.k": "Multi-kills", "f2.t": "Rampage deserves a stage", "f2.p": "Double, triple, ultra kills and Rampage: big and with sound. Viewers won't miss it even if they were reading chat.",
-    "f2.s1": "kill streaks", "f2.s2b": "Sound", "f2.s2": "one for each", "f2.s3b": "Your look", "f2.s3": "colours and frames",
-    "f3.k": "Map objectives", "f3.t": "Roshan, towers, Tormentor", "f3.p": "Who took the Aegis, which tower fell, where the Tormentor spawned and where Roshan moved. Plus buybacks, so viewers understand why the fight went wrong.",
-    "f3.s1b": "Aegis", "f3.s1": "and its timer", "f3.s2b": "Buildings", "f3.s2": "ours and theirs", "f3.s3b": "Buybacks", "f3.s3": "both teams",
-    "f4.k": "Purchases", "f4.t": "Got Aghanim's? Show it", "f4.p": "Expensive items appear on screen with their price and purchase time. You choose the price threshold: only key items or everything.",
-    "f4.s1b": "Price", "f4.s1": "and match minute", "f4.s2b": "Threshold", "f4.s2": "from how much gold", "f4.s3b": "Upgrades", "f4.s3": "Scepter, Shard",
-    "w.k": "Widgets", "w.t": "Build your scene.<br><span>Each widget is its own OBS source.</span>",
-    "w.timers": "Map timers", "w.timers.p": "Runes, shrines, Roshan, Aegis, day and night, with an early warning.",
-    "w.card": "Hero card", "w.card.p": "Match result: KDA, net worth, items, MMR.", "w.items": "Inventory", "w.items.p": "Items and when they were bought.",
-    "w.score": "Score", "w.score.p": "Team kills and time.", "w.team": "Teams", "w.team.p": "All ten heroes with KDA and streaks.", "w.stats": "Stats", "w.stats.p": "KDA, GPM, gold, buyback.",
-    "sc.k": "And there's more", "sc.t": "Not only for viewers.<br><span>It helps you while you play, too.</span>",
-    "sc.1": "Second screen", "sc.1p": "Event feed, rank and rune and Roshan alerts on your other monitor.",
-    "sc.2": "Phone", "sc.2p": "Timers and events on your phone over home Wi-Fi. Scan the QR code and you're in.",
-    "sc.3": "Match history", "sc.3p": "90 days of games: wins, KDA, heroes and MMR change.",
-    "d.k": "Free for everyone", "d.t": "Ready to go live?", "d.p": "One file, no installer, no sign-up. The program sets up Dota 2 for you and tells you when a new version is out.",
-    "d.notes": "What's new →", "d.s1": "Download and run ShardOverlay.exe", "d.s2": "Restart Dota 2: the program connects by itself", "d.s3": "Add the widget links to OBS as Browser sources",
-    "a.t": "About me", "a.p": "Hi! I'm Shautbenaht: I play Dota 2 and stream. I built the overlay I was missing myself, and now I share it with everyone.",
-    "s.t": "Support", "s.p": "Shard Overlay is free and will stay free. If it makes your streams better, you can support development. It helps updates come out faster.",
-    "foot.note": "Not affiliated with Valve Corporation. Dota 2 is a trademark of Valve Corporation.", "foot.terms": "Terms of use", "foot.privacy": "Privacy",
-  };
+  // Russian is the page itself; other languages come from i18n.js
   const RU = {};
   document.querySelectorAll("[data-t]").forEach((el) => { RU[el.dataset.t] = el.textContent; });
   document.querySelectorAll("[data-t-html]").forEach((el) => { RU[el.dataset.tHtml] = el.innerHTML; });
-  function setLang(lang) {
-    const D = lang === "en" ? EN : RU;
+  RU.mb = "МБ"; RU["d.copied"] = "Скопировано";
+  TEXTS.ru = RU;
+  const T = (k) => (TEXTS[lang] || TEXTS.en)[k] || TEXTS.en[k] || RU[k];
+
+  const release = { ver: "v0.6.0", bytes: 72011455 };   // shown until GitHub answers (or if it doesn't)
+  function showRelease() {
+    document.querySelectorAll(".ver").forEach((el) => { el.textContent = release.ver; });
+    const mb = Math.round(release.bytes / 1048576);
+    document.querySelectorAll(".btn .size").forEach((el) => { el.textContent = `· ${mb} ${T("mb")}`; });
+    if (release.sha) document.getElementById("sha").textContent = release.sha;
+  }
+
+  const menu = document.querySelector("#langs ul");
+  menu.innerHTML = LANGS.map(([code, short, name]) => `<li><button type="button" data-lang="${code}"><b>${short}</b>${name}</button></li>`).join("");
+  let lang = "en";
+  function setLang(next) {
+    lang = TEXTS[next] ? next : "en";
+    const D = TEXTS[lang];
     document.documentElement.lang = lang;
-    document.querySelectorAll("[data-t]").forEach((el) => { if (D[el.dataset.t]) el.textContent = D[el.dataset.t]; });
-    document.querySelectorAll("[data-t-html]").forEach((el) => { if (D[el.dataset.tHtml]) el.innerHTML = D[el.dataset.tHtml]; });
-    document.getElementById("lang").textContent = lang === "en" ? "RU" : "EN";
-    // plates and widgets: their texts are in the picture, English ones live in img/en/
+    document.querySelectorAll("[data-t]").forEach((el) => { const v = D[el.dataset.t] || RU[el.dataset.t]; if (v) el.textContent = v; });
+    document.querySelectorAll("[data-t-html]").forEach((el) => { const v = D[el.dataset.tHtml] || RU[el.dataset.tHtml]; if (v) el.innerHTML = v; });
+    document.querySelector("#lang span").textContent = LANGS.find((l) => l[0] === lang)[1];
+    menu.querySelectorAll("button").forEach((b) => b.toggleAttribute("aria-current", b.dataset.lang === lang));
+    // plates and widgets: their texts are in the picture, so each language has its own copies (Russian in img/)
     document.querySelectorAll('img[src*="/plate_"], img[src*="/w_"]').forEach((im) => {
       const name = im.getAttribute("src").split("/").pop();
-      im.setAttribute("src", (lang === "en" ? "img/en/" : "img/") + name);
+      im.setAttribute("src", (lang === "ru" ? "img/" : `img/${lang}/`) + name);
     });
+    showRelease();
     try { localStorage.setItem("lang", lang); } catch (e) {}
   }
-  let lang = "ru";
-  try { lang = localStorage.getItem("lang") || (navigator.language.startsWith("ru") || navigator.language.startsWith("uk") ? "ru" : "en"); } catch (e) {}
-  if (lang === "en") setLang("en");
-  document.getElementById("lang").onclick = () => setLang(document.documentElement.lang === "en" ? "ru" : "en");
+  let saved = null;
+  try { saved = localStorage.getItem("lang"); } catch (e) {}
+  setLang(saved || "en");
+  document.documentElement.classList.remove("wait");
+
+  const langs = document.getElementById("langs");
+  const toggle = (open) => { langs.classList.toggle("open", open); document.getElementById("lang").setAttribute("aria-expanded", open); };
+  document.getElementById("lang").onclick = (e) => { e.stopPropagation(); toggle(!langs.classList.contains("open")); };
+  menu.onclick = (e) => { const b = e.target.closest("button"); if (b) { setLang(b.dataset.lang); toggle(false); } };
+  document.addEventListener("click", () => toggle(false));
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") toggle(false); });
+
+  // the latest release: version, size and checksum straight from GitHub
+  fetch("https://api.github.com/repos/Shautbenaht-world/shard-overlay/releases/latest")
+    .then((r) => r.ok ? r.json() : Promise.reject())
+    .then((r) => {
+      const exe = (r.assets || []).find((a) => a.name === "ShardOverlay.exe");
+      release.ver = r.tag_name || release.ver;
+      if (exe) { release.bytes = exe.size; if (exe.digest && exe.digest.startsWith("sha256:")) release.sha = exe.digest.slice(7); }
+      showRelease();
+    })
+    .catch(() => {});
+
+  document.getElementById("copy").onclick = (e) => {
+    navigator.clipboard.writeText(document.getElementById("sha").textContent).then(() => {
+      e.target.textContent = T("d.copied");
+      setTimeout(() => { e.target.textContent = T("d.copy"); }, 1600);
+    });
+  };
 
   // the hero "stream": plates come one after another, like in a match
   const plates = [...document.querySelectorAll("#slot img")];
